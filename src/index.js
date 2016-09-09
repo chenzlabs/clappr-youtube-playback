@@ -91,7 +91,8 @@ export default class YoutubePlayback extends Playback {
       html5: 1,
       playsinline: 1,
       vq: this.options.videoQuality || this.findVideoQuality(this.options.src),
-      rel: this.options.youtubeShowRelated || 0
+      rel: this.options.youtubeShowRelated || 0,
+      loop: this.options.loop ? 1 : 0
     }
     var isLocalProtocol = window.location.protocol === 'file:' || window.location.protocol === 'app:'
     if (!isLocalProtocol) {
@@ -102,6 +103,8 @@ export default class YoutubePlayback extends Playback {
       playerVars.list = this.options.youtubePlaylist
     }
     this.player = new YT.Player(`yt${this.cid}`, {
+      width: this.options.width || '100%',
+      height: this.options.height || '100%',
       videoId: this.findVideoId(this.options.src),
       playerVars: playerVars,
       events: {
@@ -240,6 +243,9 @@ export default class YoutubePlayback extends Playback {
     this.$el.html(this.template({id: `yt${this.cid}`}))
     let style = Styler.getStyleFor(playbackStyle, {baseUrl: this.options.baseUrl})
     this.$el.append(style)
+    if (this.options.autoPlay) {
+        this.play()
+    }
     return this
   }
 }
