@@ -80,6 +80,11 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _publicYoutubeHtml2 = _interopRequireDefault(_publicYoutubeHtml);
 
+	var YT_URL_PARSER = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/;
+
+	// Flag to track if youtube api got loaded on to the DOM
+	var apiLoaded = false;
+
 	var YoutubePlayback = (function (_Playback) {
 	  _inherits(YoutubePlayback, _Playback);
 
@@ -131,7 +136,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      right: ['fullscreen', 'volume', 'hd-indicator']
 	    };
 	    _Clappr.Mediator.on(_Clappr.Events.PLAYER_RESIZE, this.updateSize, this);
-	    this.embedYoutubeApiScript();
+	    // If the script tag is already loaded simply call ready
+	    if (!apiLoaded) {
+	      this.embedYoutubeApiScript();
+	      apiLoaded = true;
+	    } else {
+	      this.ready();
+	    }
 	  }
 
 	  _createClass(YoutubePlayback, [{
@@ -162,6 +173,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	      };
 	    }
 	  }, {
+	    key: 'findVideoId',
+	    value: function findVideoId(url) {
+	      var match_content = url.match(YT_URL_PARSER);
+	      if (match_content && match_content[match_content.length - 1].length === 11) {
+	        return match_content[match_content.length - 1];
+	      } else {
+	        return url;
+	      }
+	    }
+	  }, {
+	    key: 'findVideoQuality',
+	    value: function findVideoQuality(url) {
+	      var regVideoQuality = /[?&]vq=([^#\&\?]+)/;
+	      var match = url.match(regVideoQuality);
+	      if (match !== null && match.length > 1) {
+	        return match[1];
+	      }
+	      return 'auto';
+	    }
+	  }, {
 	    key: 'embedYoutubePlayer',
 	    value: function embedYoutubePlayer() {
 	      var _this3 = this;
@@ -174,14 +205,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	        iv_load_policy: 3,
 	        modestbranding: 1,
 	        showinfo: 0,
-	        html5: 1
+	        html5: 1,
+	        playsinline: 1,
+	        vq: this.options.videoQuality || this.findVideoQuality(this.options.src),
+	        rel: this.options.youtubeShowRelated || 0,
+	        loop: this.options.loop ? 1 : 0
 	      };
+	      var isLocalProtocol = window.location.protocol === 'file:' || window.location.protocol === 'app:';
+	      if (!isLocalProtocol) {
+	        playerVars.origin = window.location.protocol + '//' + window.location.host;
+	      }
 	      if (this.options.youtubePlaylist) {
 	        playerVars.listType = 'playlist';
 	        playerVars.list = this.options.youtubePlaylist;
 	      }
 	      this.player = new YT.Player('yt' + this.cid, {
-	        videoId: this.options.src,
+	        width: this.options.width || '100%',
+	        height: this.options.height || '100%',
+	        videoId: this.findVideoId(this.options.src),
 	        playerVars: playerVars,
 	        events: {
 	          onReady: function onReady() {
@@ -355,6 +396,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.$el.html(this.template({ id: 'yt' + this.cid }));
 	      var style = _Clappr.Styler.getStyleFor(_publicStyleCss2['default'], { baseUrl: this.options.baseUrl });
 	      this.$el.append(style);
+	      if (this.options.autoPlay) {
+	        this.play();
+	      }
 	      return this;
 	    }
 	  }]);
@@ -366,7 +410,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	YoutubePlayback.canPlay = function (source) {
 	  // eslint-disable-line no-unused-vars
-	  return true;
+	  return YT_URL_PARSER.test(source);
 	};
 	module.exports = exports['default'];
 
