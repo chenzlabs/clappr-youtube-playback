@@ -121,6 +121,9 @@ export default class YoutubePlayback extends Playback {
 
   ready () {
     this._ready = true
+    if (this.options.mute) {
+      this.volume(0)
+    }
     this.trigger(Events.PLAYBACK_READY)
   }
 
