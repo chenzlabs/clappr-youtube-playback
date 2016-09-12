@@ -3,7 +3,9 @@ import { Events, Playback, Mediator, Styler, template } from 'Clappr'
 import playbackStyle from './public/style.css'
 import playbackHtml from './public/youtube.html'
 
-const YT_URL_PARSER = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/
+// NOTE: this will match ^.*v/([^#\&\?]*).* which is too wide open...
+//const YT_URL_PARSER = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/
+const YT_URL_PARSER = /^.*((youtu.be\/)|(youtube.com\/v\/)|(youtube.com\/u\/\w\/)|(youtube.com\/embed\/)|(youtube.com\/watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/
 
 // Flag to track if youtube api got loaded on to the DOM
 let apiLoaded = false
