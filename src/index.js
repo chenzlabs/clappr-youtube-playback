@@ -42,7 +42,12 @@ export default class YoutubePlayback extends Playback {
       this.embedYoutubeApiScript()
       apiLoaded = true
     } else {
-      this.ready()
+// try stalling to see if that helps
+// yes it helps - 100ms too low, 500ms works almost always
+var _this = this;
+setTimeout(function(){
+      _this.ready()
+},500);
     }
   }
 
@@ -50,6 +55,10 @@ export default class YoutubePlayback extends Playback {
     if (window.YT && window.YT.Player) {
       this.embedYoutubePlayer()
     } else {
+// NO - this only fires for one instance of YT player
+// ... because PLAYBACK_READY is firing before this gets installed ...
+//      this.once(Events.PLAYBACK_READY, () => this.embedYoutubePlayer())
+      console.log("awaiting PLAYBACK_READY")
       this.once(Events.PLAYBACK_READY, () => this.embedYoutubePlayer())
     }
   }
@@ -126,6 +135,7 @@ export default class YoutubePlayback extends Playback {
     if (this.options.mute) {
       this.volume(0)
     }
+    console.log("trigger PLAYBACK_READY")
     this.trigger(Events.PLAYBACK_READY)
   }
 
