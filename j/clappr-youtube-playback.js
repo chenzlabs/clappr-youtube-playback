@@ -80,7 +80,9 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _publicYoutubeHtml2 = _interopRequireDefault(_publicYoutubeHtml);
 
-	var YT_URL_PARSER = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/;
+	// NOTE: this will match ^.*v/([^#\&\?]*).* which is too wide open...
+	//const YT_URL_PARSER = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/
+	var YT_URL_PARSER = /^.*((youtu.be\/)|(youtube.com\/v\/)|(youtube.com\/u\/\w\/)|(youtube.com\/embed\/)|(youtube.com\/watch\?)|(feature\=player_embedded&))\??v?=?([^#\&\?]*).*/;
 
 	// Flag to track if youtube api got loaded on to the DOM
 	var apiLoaded = false;
@@ -141,27 +143,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.embedYoutubeApiScript();
 	      apiLoaded = true;
 	    } else {
-	      this.ready();
+	      // try stalling to see if that helps
+	      // yes it helps - 100ms too low, 500ms works almost always
+	      var _this = this;
+	      setTimeout(function () {
+	        _this.ready();
+	      }, 500);
 	    }
 	  }
 
 	  _createClass(YoutubePlayback, [{
 	    key: 'setupYoutubePlayer',
 	    value: function setupYoutubePlayer() {
-	      var _this = this;
+	      var _this2 = this;
 
 	      if (window.YT && window.YT.Player) {
 	        this.embedYoutubePlayer();
 	      } else {
+	        // NO - this only fires for one instance of YT player
+	        // ... because PLAYBACK_READY is firing before this gets installed ...
+	        //      this.once(Events.PLAYBACK_READY, () => this.embedYoutubePlayer())
+	        console.log("awaiting PLAYBACK_READY");
 	        this.once(_Clappr.Events.PLAYBACK_READY, function () {
-	          return _this.embedYoutubePlayer();
+	          return _this2.embedYoutubePlayer();
 	        });
 	      }
 	    }
 	  }, {
 	    key: 'embedYoutubeApiScript',
 	    value: function embedYoutubeApiScript() {
-	      var _this2 = this;
+	      var _this3 = this;
 
 	      var script = document.createElement('script');
 	      script.setAttribute('type', 'text/javascript');
@@ -169,7 +180,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      script.setAttribute('src', 'https://www.youtube.com/iframe_api');
 	      document.body.appendChild(script);
 	      window.onYouTubeIframeAPIReady = function () {
-	        return _this2.ready();
+	        return _this3.ready();
 	      };
 	    }
 	  }, {
@@ -195,7 +206,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'embedYoutubePlayer',
 	    value: function embedYoutubePlayer() {
-	      var _this3 = this;
+	      var _this4 = this;
 
 	      var playerVars = {
 	        controls: 0,
@@ -226,13 +237,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        playerVars: playerVars,
 	        events: {
 	          onReady: function onReady() {
-	            return _this3.ready();
+	            return _this4.ready();
 	          },
 	          onStateChange: function onStateChange(event) {
-	            return _this3.stateChange(event);
+	            return _this4.stateChange(event);
 	          },
 	          onPlaybackQualityChange: function onPlaybackQualityChange(event) {
-	            return _this3.qualityChange(event);
+	            return _this4.qualityChange(event);
 	          }
 	        }
 	      });
@@ -246,6 +257,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    key: 'ready',
 	    value: function ready() {
 	      this._ready = true;
+	      if (this.options.mute) {
+	        this.volume(0);
+	      }
+	      console.log("trigger PLAYBACK_READY");
 	      this.trigger(_Clappr.Events.PLAYBACK_READY);
 	    }
 	  }, {
@@ -291,23 +306,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, {
 	    key: 'play',
 	    value: function play() {
-	      var _this4 = this;
+	      var _this5 = this;
 
 	      if (this.player) {
 	        this._progressTimer = this._progressTimer || setInterval(function () {
-	          return _this4.progress();
+	          return _this5.progress();
 	        }, 100);
 	        this._timeupdateTimer = this._timeupdateTimer || setInterval(function () {
-	          return _this4.timeupdate();
+	          return _this5.timeupdate();
 	        }, 100);
 	        this.player.playVideo();
 	      } else if (this._ready) {
 	        this.trigger(_Clappr.Events.PLAYBACK_BUFFERING);
 	        this._progressTimer = this._progressTimer || setInterval(function () {
-	          return _this4.progress();
+	          return _this5.progress();
 	        }, 100);
 	        this._timeupdateTimer = this._timeupdateTimer || setInterval(function () {
-	          return _this4.timeupdate();
+	          return _this5.timeupdate();
 	        }, 100);
 	        this.setupYoutubePlayer();
 	      } else {
